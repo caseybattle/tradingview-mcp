@@ -15,8 +15,17 @@ const MODEL = `${CHART_API}._chartWidget.model()`;
 async function pollLoop(fetcher, { interval = 500, dedupe = true, label = 'stream' } = {}) {
   let lastHash = null;
   let running = true;
+  let fetchInFlight = false;
+  let sigintCount = 0;
 
-  const cleanup = () => { running = false; };
+  const cleanup = () => {
+    running = false;
+    sigintCount++;
+    // If a fetch is hung (e.g. CDP stopped responding), the flag-check-between-
+    // iterations approach never gets a chance to observe `running`. A second
+    // Ctrl+C forces the process to exit rather than appearing to hang forever.
+    if (fetchInFlight && sigintCount >= 2) process.exit(130);
+  };
   process.on('SIGINT', cleanup);
   process.on('SIGTERM', cleanup);
 
@@ -28,9 +37,18 @@ async function pollLoop(fetcher, { interval = 500, dedupe = true, label = 'strea
   process.stderr.write(`   Ensure your usage complies with TradingView's Terms of Use.\n`);
   process.stderr.write(`[stream:${label}] started, interval=${interval}ms, Ctrl+C to stop\n`);
 
+  // Fetch timeout ~4x the poll interval (min 10s) so a hung evaluate()/fetcher()
+  // call doesn't block the loop -- and Ctrl+C -- indefinitely.
+  const fetchTimeoutMs = Math.max(interval * 4, 10000);
+
   while (running) {
     try {
-      const data = await fetcher();
+      fetchInFlight = true;
+      const data = await Promise.race([
+        fetcher(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('fetch timed out')), fetchTimeoutMs)),
+      ]);
+      fetchInFlight = false;
       if (!data) { await sleep(interval); continue; }
 
       const hash = dedupe ? JSON.stringify(data) : null;
@@ -40,6 +58,7 @@ async function pollLoop(fetcher, { interval = 500, dedupe = true, label = 'strea
         process.stdout.write(line + '\n');
       }
     } catch (err) {
+      fetchInFlight = false;
       // Connection errors — retry silently
       if (/CDP|ECONNREFUSED/i.test(err.message)) {
         await sleep(2000);

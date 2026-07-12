@@ -1,12 +1,9 @@
 import { z } from 'zod';
-import { jsonResult } from './_format.js';
+import { jsonResult, wrapTool } from './_format.js';
 import * as core from '../core/watchlist.js';
 
 export function registerWatchlistTools(server) {
-  server.tool('watchlist_get', 'Get all symbols from the current TradingView watchlist with last price, change, and change%', {}, async () => {
-    try { return jsonResult(await core.get()); }
-    catch (err) { return jsonResult({ success: false, error: err.message }, true); }
-  });
+  server.tool('watchlist_get', 'Get all symbols from the current TradingView watchlist with last price, change, and change%', {}, wrapTool(() => core.get()));
 
   server.tool('watchlist_add', 'Add a symbol to the TradingView watchlist', {
     symbol: z.string().describe('Symbol to add (e.g., AAPL, BTCUSD, ES1!, NYMEX:CL1!)'),
@@ -26,15 +23,9 @@ export function registerWatchlistTools(server) {
 
   server.tool('watchlist_add_bulk', 'Add multiple symbols to the TradingView watchlist', {
     symbols: z.array(z.string()).describe('Symbols to add (e.g., ["AAPL", "ES1!", "NYMEX:CL1!"])'),
-  }, async ({ symbols }) => {
-    try { return jsonResult(await core.addBulk({ symbols })); }
-    catch (err) { return jsonResult({ success: false, error: err.message }, true); }
-  });
+  }, wrapTool(({ symbols }) => core.addBulk({ symbols })));
 
   server.tool('watchlist_remove', 'Remove one or more symbols from the active TradingView watchlist', {
     symbols: z.array(z.string()).describe('Symbols to remove — bare (AAPL) or full (NASDAQ:AAPL)'),
-  }, async ({ symbols }) => {
-    try { return jsonResult(await core.remove({ symbols })); }
-    catch (err) { return jsonResult({ success: false, error: err.message }, true); }
-  });
+  }, wrapTool(({ symbols }) => core.remove({ symbols })));
 }

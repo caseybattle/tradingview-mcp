@@ -286,7 +286,7 @@ function _copyMsixPackageLocal(tvPath, { cpSync, rmSync, readdirSync, existsSync
 export async function launch({ port, kill_existing, _deps } = {}) {
   const deps = _resolveLaunchDeps(_deps);
   const cdpPort = port || CDP_PORT;
-  const killFirst = kill_existing !== false;
+  const killFirst = kill_existing === true;
   const platform = process.platform;
 
   const pathMap = {
@@ -372,6 +372,12 @@ export async function launch({ port, kill_existing, _deps } = {}) {
     if (!info) {
       // Direct WindowsApps launch was blocked or CDP never bound — fall back to
       // a local copy of the package (see _copyMsixPackageLocal).
+      process.stderr.write(
+        '⚠  tradingview-mcp: CDP could not bind to the sandboxed Store (MSIX) install. ' +
+        'Falling back to an unsandboxed local copy in %LOCALAPPDATA%\\tradingview-mcp. ' +
+        'This copy will NOT auto-update and runs outside the Store sandbox. ' +
+        'Reinstall/update TradingView from the Store periodically to keep it current.\n'
+      );
       const localExe = _copyMsixPackageLocal(tvPath, deps);
       await killExisting();
       child = _spawnDetached(deps.spawn, localExe, cdpArgs);

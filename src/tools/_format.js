@@ -8,3 +8,18 @@ export function jsonResult(obj, isError = false) {
     ...(isError && { isError: true }),
   };
 }
+
+/**
+ * Wraps a tool handler so it converts its resolved value/thrown error into the
+ * standard jsonResult shape, instead of every handler hand-rolling the same
+ * try/catch.
+ */
+export function wrapTool(fn) {
+  return async (...args) => {
+    try {
+      return jsonResult(await fn(...args));
+    } catch (err) {
+      return jsonResult({ success: false, error: err.message }, true);
+    }
+  };
+}

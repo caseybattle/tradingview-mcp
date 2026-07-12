@@ -135,7 +135,7 @@ function buildGraphicsJS(collectionName, mapKey, filter) {
 }
 
 export async function getOhlcv({ count, summary } = {}) {
-  const limit = Math.min(count || 100, MAX_OHLCV_BARS);
+  const limit = Math.min(count ?? 100, MAX_OHLCV_BARS);
   let data;
   try {
     data = await evaluate(`
@@ -293,7 +293,7 @@ export async function getStrategyResults() {
 }
 
 export async function getTrades({ max_trades } = {}) {
-  const limit = Math.min(max_trades || 20, MAX_TRADES);
+  const limit = Math.min(max_trades ?? 20, MAX_TRADES);
   const ready = await ensureStrategyTesterReady();
   const trades = await evaluate(`
     (function() {

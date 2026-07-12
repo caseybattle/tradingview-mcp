@@ -288,6 +288,10 @@ export async function switchTab({ index }) {
   const tabs = await list();
   const idx = Number(index);
 
+  if (!Number.isInteger(idx) || idx < 0) {
+    throw new Error(`Invalid tab index ${JSON.stringify(index)}: must be a non-negative integer.`);
+  }
+
   if (idx >= tabs.tab_count) {
     throw new Error(`Tab index ${idx} out of range (have ${tabs.tab_count} tabs)`);
   }

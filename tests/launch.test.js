@@ -84,8 +84,9 @@ describe('launch() — MSIX WindowsApps handling', { skip: !onWindows }, () => {
     // stale cached version of another release is cleaned up first
     assert.equal(state.removed.length, 1);
     assert.match(state.removed[0], /3\.0\.0\.7652/);
-    // the CDP-less direct instance is killed before relaunching from the copy
-    assert.ok(state.killed >= 2);
+    // kill_existing now defaults to opt-in (off) — no upfront kill — but the
+    // CDP-less direct instance is still killed before relaunching from the copy.
+    assert.ok(state.killed >= 1);
   });
 
   it('CDP never binding on direct spawn falls back to local copy', async () => {

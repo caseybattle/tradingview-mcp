@@ -297,6 +297,13 @@ export async function findElement({ query, strategy }) {
 }
 
 export async function uiEvaluate({ expression }) {
+  if (!process.env.TV_ALLOW_EVAL || /^(0|false|no)$/i.test(process.env.TV_ALLOW_EVAL)) {
+    throw new Error(
+      'ui_evaluate is disabled by default because it runs arbitrary JavaScript against your ' +
+      'live, authenticated TradingView session via CDP. Set the TV_ALLOW_EVAL environment ' +
+      'variable to a truthy value (e.g. TV_ALLOW_EVAL=1) to explicitly opt in.'
+    );
+  }
   const result = await evaluate(expression);
   return { success: true, result };
 }
