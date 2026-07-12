@@ -136,6 +136,7 @@ function buildGraphicsJS(collectionName, mapKey, filter) {
 
 export async function getOhlcv({ count, summary } = {}) {
   const limit = Math.min(count ?? 100, MAX_OHLCV_BARS);
+  if (limit <= 0) return { success: true, bar_count: 0, bars: [] };
   let data;
   try {
     data = await evaluate(`
@@ -328,7 +329,7 @@ export async function getTrades({ max_trades } = {}) {
     })()
   `);
   return {
-    success: (trades?.trades?.length || 0) > 0,
+    success: !trades?.error,
     trade_count: trades?.trades?.length || 0, total_orders: trades?.total_orders ?? 0,
     source: trades?.source, trades: trades?.trades || [],
     ...(ready.unhidden.length && { unhidden_strategies: ready.unhidden, note: 'Strategy was hidden on the chart; it was made visible so orders could compute.' }),
